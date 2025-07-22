@@ -66,4 +66,14 @@ class User extends Authenticatable
     {
         return $this->friends()->union($this->friendOf());
     }
+
+    public function blockedUsers()
+    {
+        return $this->belongsToMany(User::class, 'blocked_users', 'blocker_id', 'blocked_id');
+    }
+
+    public function blockedBy()
+    {
+        return $this->belongsToMany(User::class, 'blocked_users', 'blocked_id', 'blocker_id');
+    }
 }
