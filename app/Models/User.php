@@ -76,4 +76,21 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(User::class, 'blocked_users', 'blocked_id', 'blocker_id');
     }
+
+    public function conversationsAsUser1()
+    {
+        return $this->hasMany(Conversation::class, 'user1_id');
+    }
+
+    public function conversationsAsUser2()
+    {
+        return $this->hasMany(Conversation::class, 'user2_id');
+    }
+
+    public function conversations()
+    {
+        return $this->conversationsAsUser1()
+            ->union($this->conversationsAsUser2())
+            ->orderBy('last_message_at', 'desc');
+    }
 }
