@@ -93,4 +93,9 @@ class User extends Authenticatable
             ->union($this->conversationsAsUser2())
             ->orderBy('last_message_at', 'desc');
     }
+
+    public function sentMessages()
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
 }
