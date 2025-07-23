@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('password')->nullable();
             $table->string('avatar')->nullable();
             $table->enum('role', ['users', 'admin'])->default('users');
+            $table->boolean('is_blocked')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
