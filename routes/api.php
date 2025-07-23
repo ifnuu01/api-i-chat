@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\BlockedController;
+use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\FriendshipsController;
 use App\Http\Controllers\GoogleController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -14,17 +16,56 @@ Route::get('/user', function (Request $request) {
 Route::get('/test-google-client', [GoogleController::class, 'testClientId']);
 Route::post('/auth/google', [GoogleController::class, 'login']);
 
-Route::get('/user', [UserController::class, 'index']);
-Route::get('/user/{id}', [UserController::class, 'show']);
-Route::delete('/user/{id}', [UserController::class, 'destroy']);
-Route::post('/user/block/{id}', [UserController::class, 'block']);
-Route::post('/user/unblock/{id}', [UserController::class, 'unblock']);
-Route::get('/users/search', [UserController::class, 'search']);
+Route::middleware('auth:sanctum')->group(function () {
 
-Route::get('/block', [BlockedController::class, 'getBlockedUsers']);
-Route::post('/block', [BlockedController::class, 'block']);
-Route::post('/unblock', [BlockedController::class, 'unblock']);
+    // === AUTH & PROFILE ===
+    Route::get('/user/profile', function (Request $request) {
+        return response()->json([
+            'success' => true,
+            'data' => $request->user()
+        ]);
+    });
 
-Route::get('/friend', [FriendshipsController::class, 'getFriendUsers']);
-Route::post('/addfriend', [FriendshipsController::class, 'addFriend']);
-Route::post('/unfriend', [FriendshipsController::class, 'unFriend']);
+    // === USER MANAGEMENT ===
+    Route::prefix('users')->group(function () {
+        Route::get('/', [UserController::class, 'index']);
+        Route::get('/search', [UserController::class, 'search']);
+        Route::get('/{id}', [UserController::class, 'show']);
+
+        // Admin routes
+        Route::delete('/{id}', [UserController::class, 'destroy']);
+        Route::post('/{id}/block', [UserController::class, 'block']);
+        Route::post('/{id}/unblock', [UserController::class, 'unblock']);
+    });
+
+    // === FRIENDSHIP MANAGEMENT ===
+    Route::prefix('friends')->group(function () {
+        Route::get('/', [FriendshipsController::class, 'getFriends']);
+        Route::post('/add', [FriendshipsController::class, 'addFriend']);
+        Route::post('/remove', [FriendshipsController::class, 'removeFriend']);
+    });
+
+    // === BLOCK MANAGEMENT ===
+    Route::prefix('blocked')->group(function () {
+        Route::get('/', [BlockedController::class, 'getBlockedUsers']);
+        Route::post('/', [BlockedController::class, 'block']);
+        Route::delete('/', [BlockedController::class, 'unblock']);
+    });
+
+    // === CONVERSATION MANAGEMENT ===
+    Route::prefix('conversations')->group(function () {
+        Route::get('/', [ConversationController::class, 'index']);
+        Route::post('/', [ConversationController::class, 'store']);
+        Route::get('/{id}', [ConversationController::class, 'show']);
+        Route::post('/{id}/read', [ConversationController::class, 'markAsRead']);
+        Route::delete('/{id}', [ConversationController::class, 'destroy']);
+    });
+
+    // === MESSAGE MANAGEMENT ===
+    Route::prefix('messages')->group(function () {
+        Route::get('/conversation/{conversationId}', [MessageController::class, 'index']);
+        Route::post('/', [MessageController::class, 'store']);
+        Route::put('/{id}', [MessageController::class, 'update']);
+        Route::delete('/{id}', [MessageController::class, 'destroy']);
+    });
+});
