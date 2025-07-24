@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlockedController;
 use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\FriendshipsController;
@@ -15,6 +16,8 @@ Route::get('/user', function (Request $request) {
 
 Route::get('/test-google-client', [GoogleController::class, 'testClientId']);
 Route::post('/auth/google', [GoogleController::class, 'login']);
+Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
 Route::middleware('auth:sanctum')->group(function () {
 
