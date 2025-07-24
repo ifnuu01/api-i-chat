@@ -38,34 +38,34 @@ class FriendshipsController extends Controller
         ]);
     }
 
-    public function unFriend(Request $request)
+    public function removeFriend(Request $request)
     {
         $request->validate([
             'friend_id' => 'required|exists:users,id'
         ]);
 
         $user = Auth::id();
-        $blocked = $request->friend_id;
+        $friend = $request->friend_id;
 
-        $existingBlock = Friendship::where('user$user_id', $user)
-            ->where('friend_id', $blocked)
+        $existingFriendship = Friendship::where('user_id', $user)
+            ->where('friend_id', $friend)
             ->first();
 
-        if (!$existingBlock) {
+        if (!$existingFriendship) {
             return response()->json([
-                'error' => 'User belum pernah diblokir'
+                'error' => 'User belum pernah berteman'
             ], 400);
         }
 
-        $existingBlock->delete();
+        $existingFriendship->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Berhasil membuka blok'
+            'message' => 'Berhasil menghapus pertemanan'
         ]);
     }
 
-    public function getFriendUsers()
+    public function getFriends()
     {
         $currentUserId = Auth::id();
 
