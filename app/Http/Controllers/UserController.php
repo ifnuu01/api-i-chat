@@ -46,7 +46,7 @@ class UserController extends Controller
         ]);
 
         $currentUserId = $request->user()->id;
-        $query = $request->query;
+        $query = $request->input('query');
 
         $users = User::where('id', '!=', $currentUserId)
             ->where(function ($q) use ($query) {
