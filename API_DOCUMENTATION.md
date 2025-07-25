@@ -82,6 +82,35 @@ I-Chat adalah aplikasi chat API yang mendukung fitur chat real-time, manajemen p
 }
 ```
 
+### Registrasi
+
+**Endpoint:** `POST /api/auth/register`
+**Request Body:**
+
+```json
+{
+    "name": "John Doe", // Required: string, max 255 characters
+    "email": "john@example.com", // Required: string, email format
+    "password": "password123", // Required: string, min 6 characters
+    "password_confirmation": "password123" // Required: string, same as password
+}
+```
+
+**Response Success (201):**
+
+```json
+{
+    "success": true,
+    "data": {
+        "id": 3,
+        "token": "3|YFH5GhJHfg7DhJG8fhJH8fhJH8fhJH8fhJH8fhJH8fhJH",
+        "name": "John Doe",
+        "email": "john@example.com",
+        "role": "users"
+    }
+}
+```
+
 ### Google OAuth
 
 **Endpoint:** `POST /api/auth/google`
