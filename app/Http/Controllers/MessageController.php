@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Message;
 use App\Models\Conversation;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Storage;
 
 class MessageController extends Controller
@@ -29,14 +28,11 @@ class MessageController extends Controller
         }
 
 
-        $page = $request->get('page', 1);
-        $limit = $request->get('limit', 50);
-
         $messages = Message::where('conversation_id', $conversationId)
             ->where('is_deleted', false)
             ->with(['sender:id,name,email', 'replyTo:id,content,sender_id'])
             ->orderBy('created_at', 'desc')
-            ->paginate($limit);
+            ->get();
 
         return response()->json([
             'success' => true,
