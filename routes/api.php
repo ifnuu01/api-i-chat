@@ -17,6 +17,7 @@ Route::get('/user', function (Request $request) {
 Route::get('/test-google-client', [GoogleController::class, 'testClientId']);
 Route::post('/auth/google', [GoogleController::class, 'login']);
 Route::post('/auth/login', [AuthController::class, 'login']);
+Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
 Route::middleware('auth:sanctum')->group(function () {
