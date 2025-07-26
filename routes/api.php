@@ -44,10 +44,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // === FRIENDSHIP MANAGEMENT ===
     Route::prefix('friends')->group(function () {
-        Route::get('/', [FriendshipsController::class, 'getFriends']);
-        Route::post('/add', [FriendshipsController::class, 'addFriend']);
+        Route::get('/', [FriendshipsController::class, 'index']);
+        Route::post('/', [FriendshipsController::class, 'store']);
+        Route::get('/requests', [FriendshipsController::class, 'getFriendRequests']);
+        Route::post('/accept', [FriendshipsController::class, 'accept']);
+        Route::post('/reject', [FriendshipsController::class, 'reject']);
+        Route::delete('/', [FriendshipsController::class, 'destroy']);
         Route::get('/search', [FriendshipsController::class, 'search']);
-        Route::post('/remove', [FriendshipsController::class, 'removeFriend']);
     });
 
     // === BLOCK MANAGEMENT ===
@@ -60,7 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // === CONVERSATION MANAGEMENT ===
     Route::prefix('conversations')->group(function () {
         Route::get('/', [ConversationController::class, 'index']);
-        Route::post('/', [ConversationController::class, 'store']);
+        Route::get('/search', [ConversationController::class, 'search']);
         Route::get('/{id}', [ConversationController::class, 'show']);
         Route::post('/{id}/read', [ConversationController::class, 'markAsRead']);
         Route::delete('/{id}', [ConversationController::class, 'destroy']);
@@ -70,7 +73,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('messages')->group(function () {
         Route::get('/conversation/{conversationId}', [MessageController::class, 'index']);
         Route::post('/', [MessageController::class, 'store']);
+        Route::get('/{id}', [MessageController::class, 'show']);
         Route::put('/{id}', [MessageController::class, 'update']);
         Route::delete('/{id}', [MessageController::class, 'destroy']);
+        Route::post('/mark-as-read', [MessageController::class, 'markAsRead']);
     });
 });
