@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('friends')->group(function () {
         Route::get('/', [FriendshipsController::class, 'getFriends']);
         Route::post('/add', [FriendshipsController::class, 'addFriend']);
+        Route::get('/search', [FriendshipsController::class, 'search']);
         Route::post('/remove', [FriendshipsController::class, 'removeFriend']);
     });
 
