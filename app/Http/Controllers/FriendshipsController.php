@@ -24,6 +24,8 @@ class FriendshipsController extends Controller
     [X]- destroy : Menghapus pertemanan dengan pengguna lain.
         - Jika pertemanan dihapus, maka percakapan antara kedua pengguna juga akan dihapus.
     [X]- search : Mencari pengguna berdasarkan nama atau email.
+    []-cancelAddFriend : Membatalkan permintaan pertemanan yang telah dikirim.
+        - Jika membatalkan berarti menghapus permintaan pertemanan tersebut dari table friendships.
     */
 
     public function index()
@@ -31,7 +33,7 @@ class FriendshipsController extends Controller
         $userId = Auth::id();
 
         $friendships = DB::select("
-            SELECT u.id, u.name, u.email, f.status, f.created_at
+            SELECT u.id, u.name, u.email, f.status, f.created_at, f.id AS friendship_id
             FROM friendships f
             JOIN users u ON (
                 CASE
@@ -68,13 +70,17 @@ class FriendshipsController extends Controller
             ], 400);
         }
 
-        DB::insert('
-            INSERT INTO friendships (user_id, friend_id, status, created_at, updated_at)
-            VALUES (?, ?, ?, NOW(), NOW())
-        ', [$userId, $friendId, 'pending']);
+        $friendshipId = DB::table('friendships')->insertGetId([
+            'user_id' => $userId,
+            'friend_id' => $friendId,
+            'status' => 'pending',
+            'created_at' => now(),
+            'updated_at' => now()
+        ]);
 
         return response()->json([
-            'message' => 'Permintaan pertemanan telah dikirim'
+            'message' => 'Permintaan pertemanan telah dikirim',
+            'friendship_id' => $friendshipId
         ]);
     }
 
@@ -191,6 +197,32 @@ class FriendshipsController extends Controller
         ]);
     }
 
+    public function cancelAddFriend(Request $request)
+    {
+        $userId = Auth::id();
+        $request->validate([
+            'friendship_id' => 'required|exists:friendships,id',
+        ]);
+        $friendshipId = $request->friendship_id;
+
+        $friendship = DB::select("
+            SELECT * FROM friendships
+            WHERE id = ? AND user_id = ? AND status = 'pending'
+        ", [$friendshipId, $userId]);
+
+        if (empty($friendship)) {
+            return response()->json([
+                'message' => 'Permintaan pertemanan tidak ditemukan atau sudah diterima.'
+            ], 404);
+        }
+
+        DB::delete('DELETE FROM friendships WHERE id = ?', [$friendshipId]);
+
+        return response()->json([
+            'message' => 'Permintaan pertemanan telah dibatalkan.'
+        ]);
+    }
+
     public function search(Request $request)
     {
         $userId = Auth::id();
@@ -216,30 +248,27 @@ class FriendshipsController extends Controller
                     ELSE 'none'
                 END AS friendship_status,
                 CASE
-                    WHEN f1.status = 'accepted' OR f2.status = 'accepted' THEN false
-                    WHEN f1.status = 'pending' AND f1.user_id = ? THEN false
-                    WHEN f2.status = 'pending' AND f2.user_id = u.id THEN true
-                    ELSE true
-                END AS show_button,
-                CASE
-                    WHEN f1.status = 'accepted' OR f2.status = 'accepted' THEN ''
-                    WHEN f1.status = 'pending' AND f1.user_id = ? THEN 'menunggu'
-                    WHEN f2.status = 'pending' AND f2.user_id = u.id THEN 'accept'
-                    ELSE 'add'
-                END AS button_text
+                    -- Ambil ID dari f1 jika ada
+                    WHEN f1.id IS NOT NULL THEN f1.id
+                    -- Ambil ID dari f2 jika ada
+                    WHEN f2.id IS NOT NULL THEN f2.id
+                    -- Jika tidak ada relasi
+                    ELSE NULL
+                END AS friendship_id
             FROM users u
             LEFT JOIN friendships f1 ON (f1.user_id = ? AND f1.friend_id = u.id)
             LEFT JOIN friendships f2 ON (f2.user_id = u.id AND f2.friend_id = ?)
             WHERE u.id != ? 
             AND (u.name LIKE ? OR u.email LIKE ?)
             ORDER BY u.name
-        ", [$userId, $userId, $userId, $userId, $userId, $userId, "%$query%", "%$query%"]);
+        ", [$userId, $userId, $userId, $userId, "%$query%", "%$query%"]);
 
         if (empty($users)) {
             return response()->json([
                 'message' => 'Pengguna tidak ditemukan.'
             ], 404);
         }
+
 
         return response()->json($users);
     }
