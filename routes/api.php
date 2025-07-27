@@ -45,11 +45,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // === FRIENDSHIP MANAGEMENT ===
     Route::prefix('friends')->group(function () {
         Route::get('/', [FriendshipsController::class, 'index']);
-        Route::post('/', [FriendshipsController::class, 'store']);
+        Route::post('/add', [FriendshipsController::class, 'store']);
         Route::get('/requests', [FriendshipsController::class, 'getFriendRequests']);
         Route::post('/accept', [FriendshipsController::class, 'accept']);
         Route::post('/reject', [FriendshipsController::class, 'reject']);
-        Route::delete('/', [FriendshipsController::class, 'destroy']);
+        Route::post('/remove', [FriendshipsController::class, 'destroy']);
+        Route::post('/cancel', [FriendshipsController::class, 'cancelAddFriend']);
         Route::get('/search', [FriendshipsController::class, 'search']);
     });
 
@@ -64,9 +65,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('conversations')->group(function () {
         Route::get('/', [ConversationController::class, 'index']);
         Route::get('/search', [ConversationController::class, 'search']);
-        Route::get('/{id}', [ConversationController::class, 'show']);
-        Route::post('/{id}/read', [ConversationController::class, 'markAsRead']);
-        Route::delete('/{id}', [ConversationController::class, 'destroy']);
     });
 
     // === MESSAGE MANAGEMENT ===
