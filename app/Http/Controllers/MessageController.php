@@ -52,7 +52,8 @@ class MessageController extends Controller
                 s.email AS sender_email,
                 -- Reply to message info
                 rm.content AS reply_to_content,
-                rs.name AS reply_to_sender_name
+                rs.name AS reply_to_sender_name,
+                CASE WHEN m.sender_id = ? THEN true ELSE false END AS sent -- tambahkan CASE ini
             FROM messages m
             JOIN users s ON m.sender_id = s.id
             LEFT JOIN messages rm ON m.reply_to_id = rm.id
@@ -61,8 +62,7 @@ class MessageController extends Controller
             AND m.is_deleted = false
             ORDER BY m.created_at DESC
             LIMIT ? OFFSET ?
-        ", [$conversationId, $limit, $offset]);
-
+        ", [$currentUserId, $conversationId, $limit, $offset]);
 
         $formattedMessages = [];
         foreach ($messages as $message) {
@@ -80,6 +80,7 @@ class MessageController extends Controller
                 'edited_at' => $message->edited_at,
                 'created_at' => $message->created_at,
                 'updated_at' => $message->updated_at,
+                'sent' => (bool)$message->sent, // tambahkan ini
                 'sender' => [
                     'id' => $message->sender_id,
                     'name' => $message->sender_name,
