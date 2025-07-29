@@ -92,7 +92,6 @@ class ConversationController extends Controller
             -- Last message info
             lm.id AS last_message_id,
             lm.content AS last_message_content,
-            lm.type AS last_message_type,
             lm.created_at AS last_message_created_at,
             -- Unread count (simplified)
             COALESCE(unread.count, 0) AS unread_count
@@ -104,7 +103,6 @@ class ConversationController extends Controller
                 m1.conversation_id,
                 m1.id,
                 m1.content,
-                m1.type,
                 m1.created_at
             FROM messages m1
             INNER JOIN (
@@ -150,7 +148,6 @@ class ConversationController extends Controller
                 'last_message' => $conversation->last_message_id ? [
                     'id' => $conversation->last_message_id,
                     'content' => $conversation->last_message_content,
-                    'type' => $conversation->last_message_type,
                     'created_at' => $conversation->last_message_created_at
                 ] : null,
                 'unread_count' => (int)$conversation->unread_count
@@ -189,7 +186,6 @@ class ConversationController extends Controller
             END AS other_participant_email,
             lm.id AS last_message_id,
             lm.content AS last_message_content,
-            lm.type AS last_message_type,
             lm.created_at AS last_message_created_at,
             COALESCE(unread.count, 0) AS unread_count
         FROM conversations c
@@ -200,7 +196,6 @@ class ConversationController extends Controller
                 m1.conversation_id,
                 m1.id,
                 m1.content,
-                m1.type,
                 m1.created_at
             FROM messages m1
             INNER JOIN (
@@ -266,7 +261,6 @@ class ConversationController extends Controller
                 'last_message' => $conversation->last_message_id ? [
                     'id' => $conversation->last_message_id,
                     'content' => $conversation->last_message_content,
-                    'type' => $conversation->last_message_type,
                     'created_at' => $conversation->last_message_created_at
                 ] : null,
                 'unread_count' => (int)$conversation->unread_count
