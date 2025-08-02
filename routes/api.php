@@ -6,6 +6,7 @@ use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\FriendshipsController;
 use App\Http\Controllers\GoogleController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,12 @@ Route::middleware('auth:sanctum')->group(function () {
             'success' => true,
             'data' => $request->user()
         ]);
+    });
+
+    Route::prefix('profile')->group(function () {
+        Route::post('/avatar', [ProfileController::class, 'storeAvatar']);
+        Route::put('/update', [ProfileController::class, 'updateProfile']);
+        Route::put('/password', [ProfileController::class, 'updatePassword']);
     });
 
     // === USER MANAGEMENT ===
