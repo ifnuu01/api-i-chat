@@ -9,7 +9,6 @@ use App\Http\Controllers\MessageController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Events\MessageSent;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -72,9 +71,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('messages')->group(function () {
         Route::get('/conversation/{conversationId}', [MessageController::class, 'index']);
         Route::post('/', [MessageController::class, 'store']);
-        Route::get('/{id}', [MessageController::class, 'show']);
-        Route::put('/{id}', [MessageController::class, 'update']);
-        Route::delete('/{id}', [MessageController::class, 'destroy']);
+        Route::put('/', [MessageController::class, 'update']);
+        Route::delete('/', [MessageController::class, 'destroy']);
         Route::post('/mark-as-read', [MessageController::class, 'markAsRead']);
     });
 });
