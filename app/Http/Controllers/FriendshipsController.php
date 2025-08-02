@@ -5,15 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Conversation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Friendship;
-use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class FriendshipsController extends Controller
 {
     /*
     List Controller disini:
-
+    
     [X]- index : Menampilkan daftar pertemanan pengguna saat ini.
     [X]- store : Mengirim permintaan pertemanan ke pengguna lain.
     [X]- getFriendRequests : Mendapatkan daftar permintaan pertemanan yang diterima oleh pengguna saat ini.
@@ -24,7 +22,7 @@ class FriendshipsController extends Controller
     [X]- destroy : Menghapus pertemanan dengan pengguna lain.
         - Jika pertemanan dihapus, maka percakapan antara kedua pengguna juga akan dihapus.
     [X]- search : Mencari pengguna berdasarkan nama atau email.
-    []-cancelAddFriend : Membatalkan permintaan pertemanan yang telah dikirim.
+    [X]-cancelAddFriend : Membatalkan permintaan pertemanan yang telah dikirim.
         - Jika membatalkan berarti menghapus permintaan pertemanan tersebut dari table friendships.
     */
 
@@ -33,18 +31,25 @@ class FriendshipsController extends Controller
         $userId = Auth::id();
 
         $friendships = DB::select("
-            SELECT u.id, u.name, u.email, f.status, f.created_at, f.id AS friendship_id
+            SELECT u.id, u.name, u.email, f.status, f.created_at, f.id AS friendship_id, 
+                CASE
+                    WHEN (f.user_id = ? OR f.friend_id = ?) AND f.status = 'accepted' THEN 'friends'
+                    WHEN f.user_id = ? AND f.status = 'pending' THEN 'pending_sent'
+                END AS friendship_status
             FROM friendships f
             JOIN users u ON (
-                CASE
-                    WHEN f.user_id = ? THEN u.id = f.friend_id
-                    WHEN f.friend_id = ? THEN u.id = f.user_id
-                END
+                (f.user_id = ? AND u.id = f.friend_id)
+                OR
+                (f.friend_id = ? AND u.id = f.user_id)
             )
-            WHERE f.user_id = ? OR f.friend_id = ?
-            AND f.status = 'accepted'
+            WHERE 
+                (
+                    (f.status = 'accepted' AND (f.user_id = ? OR f.friend_id = ?))
+                    OR
+                    (f.status = 'pending' AND f.user_id = ?)
+                )
             ORDER BY f.created_at DESC
-        ", [$userId, $userId, $userId, $userId]);
+        ", [$userId, $userId, $userId, $userId, $userId, $userId, $userId, $userId]);
 
         return response()->json($friendships);
     }
@@ -259,7 +264,7 @@ class FriendshipsController extends Controller
             LEFT JOIN friendships f1 ON (f1.user_id = ? AND f1.friend_id = u.id)
             LEFT JOIN friendships f2 ON (f2.user_id = u.id AND f2.friend_id = ?)
             WHERE u.id != ? 
-            AND (u.name LIKE ? OR u.email LIKE ?)
+            AND (u.name LIKE ? OR u.email LIKE ?) AND u.role = 'users'
             ORDER BY u.name
         ", [$userId, $userId, $userId, $userId, "%$query%", "%$query%"]);
 

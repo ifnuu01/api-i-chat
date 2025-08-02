@@ -19,7 +19,7 @@ return new class extends Migration
             $table->text('content')->nullable();
             $table->boolean('is_edited')->nullable();
             $table->dateTime('edited_at')->nullable();
-            $table->boolean('is_deleted')->nullable();
+            $table->boolean('is_deleted')->nullable()->default(false);
             $table->dateTime('deleted_at')->nullable();
             $table->timestamps();
 

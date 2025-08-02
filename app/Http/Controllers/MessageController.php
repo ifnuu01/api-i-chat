@@ -19,8 +19,9 @@ class MessageController extends Controller
     /*
         [X] - index : Mengambil kumpulan pesan dalam sebuah percakapan dari table conversation gitu
         [X] - store : Menyimpan pesan baru ke dalam table messages
-        [] - update : Memperbarui pesan yang sudah ada (update content, edited_at, is_edited)
-        [] - destroy : Menghapus pesan dari table messages (soft delete update is_deleted dan deleted_at)
+        [X] - update : Memperbarui pesan yang sudah ada (update content, edited_at, is_edited)
+        [X] - Show : Menampilkan detail pesan tertentu (1 Pesan berdasarkan id pesan)
+        [X] - destroy : Menghapus pesan dari table messages (soft delete update is_deleted dan deleted_at)
     */
 
     public function index($conversationId, Request $request)
@@ -45,13 +46,29 @@ class MessageController extends Controller
 
         $messages = DB::select("
             SELECT m.id, m.conversation_id, m.sender_id, m.reply_to_id, m.content, m.is_edited, m.edited_at, m.is_deleted, m.deleted_at, m.created_at, m.updated_at,
-                   u.name as sender_name, u.avatar as sender_avatar
+                u.name as sender_name, u.avatar as sender_avatar
             FROM messages m
             JOIN users u ON m.sender_id = u.id
-            WHERE m.conversation_id = ? AND (m.is_deleted IS NULL OR m.is_deleted = 0)
+            WHERE m.conversation_id = ?
             ORDER BY m.created_at DESC
             LIMIT ? OFFSET ?
         ", [$conversationId, $limit, $offset]);
+
+        $messages = array_map(function ($msg) {
+            $msg = (array) $msg;
+            if ($msg['reply_to_id']) {
+                $replyTo = DB::selectOne("
+            SELECT m.id, m.content, u.name as sender_name
+            FROM messages m
+            JOIN users u ON m.sender_id = u.id
+            WHERE m.id = ?
+        ", [$msg['reply_to_id']]);
+                $msg['reply_to'] = $replyTo ? (array) $replyTo : null;
+            } else {
+                $msg['reply_to'] = null;
+            }
+            return $msg;
+        }, $messages);
 
         return response()->json([
             'success' => true,
@@ -132,7 +149,106 @@ class MessageController extends Controller
 
         return response()->json([
             'success' => true,
+            'data' => $messageArray
+        ], 201);
+    }
+
+    public function update(Request $request)
+    {
+        $currentUserId = Auth::id();
+        $idMessage = $request->input('message_id');
+        $content = $request->input('content');
+
+        if (empty($content)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Konten pesan tidak boleh kosong'
+            ], 422);
+        }
+
+        $messageId = DB::table('messages')
+            ->where('id', $idMessage)
+            ->where('sender_id', $currentUserId)
+            ->update([
+                'content' => $content,
+                'updated_at' => now(),
+                'is_edited' => true,
+            ]);
+
+        if (!$messageId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesan tidak ditemukan atau Anda tidak memiliki izin untuk mengedit pesan ini'
+            ], 404);
+        }
+
+        $message = DB::selectOne("
+            SELECT m.*, u.name as sender_name, u.avatar as sender_avatar, u.email as sender_email
+            FROM messages m
+            JOIN users u ON m.sender_id = u.id
+            WHERE m.id = ?
+        ", [$idMessage]);
+
+        $messageArray = (array) $message;
+        $messageArray['sender'] = [
+            'id' => $message->sender_id,
+            'name' => $message->sender_name,
+            'email' => $message->sender_email,
+        ];
+
+        if ($message->reply_to_id) {
+            $replyTo = DB::selectOne("
+                SELECT m.id, m.content, u.name as sender_name
+                FROM messages m
+                JOIN users u ON m.sender_id = u.id
+                WHERE m.id = ?
+            ", [$message->reply_to_id]);
+
+            $messageArray['reply_to'] = $replyTo ? (array) $replyTo : null;
+        } else {
+            $messageArray['reply_to'] = null;
+        }
+
+        Log::info("🚨 Kirim event MessageUpdated", ['id' => $messageId]);
+        event(new MessageUpdated($messageArray));
+
+        return response()->json([
+            'success' => true,
             'data' => $message
         ], 201);
+    }
+
+    public function destroy(Request $request)
+    {
+        $currentUserId = Auth::id();
+        $idMessage = $request->input('message_id');
+
+        $message = DB::table('messages')
+            ->where('id', $idMessage)
+            ->where('sender_id', $currentUserId)
+            ->first();
+
+        if (!$message) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pesan tidak ditemukan atau Anda tidak memiliki izin untuk menghapus pesan ini'
+            ], 404);
+        }
+
+        DB::table('messages')
+            ->where('id', $idMessage)
+            ->update([
+                'is_deleted' => true,
+                'deleted_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+        Log::info("🚨 Kirim event MessageDeleted", ['id' => $idMessage]);
+        event(new MessageDeleted($idMessage, $message->conversation_id));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pesan berhasil dihapus'
+        ]);
     }
 }

@@ -9,59 +9,6 @@ use Illuminate\Support\Facades\DB;
 class ConversationController extends Controller
 {
 
-    /*
-    List Controller disini:
-
-    [X]- index : Menampilkan semua percakapan pengguna saat ini menampilkan response 
-        - [
-            {
-                "id": 1,
-                "user1_id": 2,
-                "user2_id": 3,
-                "user1_last_read_at": "2025-07-24T13:06:30.000000Z",
-                "user2_last_read_at": "2025-07-24T13:07:45.000000Z",
-                "last_message_at": "2025-07-24T13:07:30.000000Z",
-                "created_at": "2025-07-24T13:06:30.000000Z",
-                "updated_at": "2025-07-24T13:07:45.000000Z",
-                "other_participant": {
-                    "id": 3,
-                    "name": "Jane Smith",
-                    "email": "jane@example.com"
-                },
-                "last_message": {
-                    "id": 2,
-                    "content": "Hi John! Baik banget nih, kamu gimana?",
-                    "type": "text",
-                    "created_at": "2025-07-24T13:07:30.000000Z"
-                },
-                "unread_count": 0
-            }
-        ]
-    [X]- Search : Mencari percakapan berdasarkan nama teman atau email teman.
-        - {
-            "id": 1,
-            "user1_id": 2,
-            "user2_id": 3,
-            "user1_last_read_at": "2025-07-24T13:06:30.000000Z",
-            "user2_last_read_at": "2025-07-24T13:07:45.000000Z",
-            "last_message_at": "2025-07-24T13:07:30.000000Z",
-            "created_at": "2025-07-24T13:06:30.000000Z",
-            "updated_at": "2025-07-24T13:07:45.000000Z",
-            "other_participant": {
-                "id": 3,
-                "name": "Jane Smith",
-                "email": "jane@example.com"
-            },
-            "last_message": {
-                "id": 2,
-                "content": "Hi John! Baik banget nih, kamu gimana?",
-                "type": "text",
-                "created_at": "2025-07-24T13:07:30.000000Z"
-            },
-            "unread_count": 0
-        }
-    */
-
     public function index()
     {
         $userId = Auth::id();
@@ -93,6 +40,7 @@ class ConversationController extends Controller
             lm.id AS last_message_id,
             lm.content AS last_message_content,
             lm.created_at AS last_message_created_at,
+            lm.is_deleted AS last_message_is_deleted,
             -- Unread count (simplified)
             COALESCE(unread.count, 0) AS unread_count
         FROM conversations c
@@ -103,7 +51,8 @@ class ConversationController extends Controller
                 m1.conversation_id,
                 m1.id,
                 m1.content,
-                m1.created_at
+                m1.created_at,
+                m1.is_deleted
             FROM messages m1
             INNER JOIN (
                 SELECT conversation_id, MAX(created_at) as max_created_at
@@ -148,7 +97,8 @@ class ConversationController extends Controller
                 'last_message' => $conversation->last_message_id ? [
                     'id' => $conversation->last_message_id,
                     'content' => $conversation->last_message_content,
-                    'created_at' => $conversation->last_message_created_at
+                    'created_at' => $conversation->last_message_created_at,
+                    'is_deleted' => $conversation->last_message_is_deleted ?? 0
                 ] : null,
                 'unread_count' => (int)$conversation->unread_count
             ];
@@ -187,6 +137,7 @@ class ConversationController extends Controller
             lm.id AS last_message_id,
             lm.content AS last_message_content,
             lm.created_at AS last_message_created_at,
+            lm.is_deleted AS last_message_is_deleted,
             COALESCE(unread.count, 0) AS unread_count
         FROM conversations c
         JOIN users u1 ON c.user1_id = u1.id
@@ -196,7 +147,8 @@ class ConversationController extends Controller
                 m1.conversation_id,
                 m1.id,
                 m1.content,
-                m1.created_at
+                m1.created_at,
+                m1.is_deleted
             FROM messages m1
             INNER JOIN (
                 SELECT conversation_id, MAX(created_at) as max_created_at
@@ -261,7 +213,8 @@ class ConversationController extends Controller
                 'last_message' => $conversation->last_message_id ? [
                     'id' => $conversation->last_message_id,
                     'content' => $conversation->last_message_content,
-                    'created_at' => $conversation->last_message_created_at
+                    'created_at' => $conversation->last_message_created_at,
+                    'is_deleted' => $conversation->last_message_is_deleted ?? 0
                 ] : null,
                 'unread_count' => (int)$conversation->unread_count
             ];
