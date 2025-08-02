@@ -3,10 +3,8 @@
 namespace App\Events;
 
 use Illuminate\Broadcasting\Channel;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
 
 class MessageSent implements ShouldBroadcastNow
 {
@@ -33,9 +31,12 @@ class MessageSent implements ShouldBroadcastNow
             'conversation_id' => $this->message['conversation_id'],
             'sender_id' => $this->message['sender_id'],
             'reply_to_id' => $this->message['reply_to_id'] ?? null,
+            'reply_to' => $this->message['reply_to'] ?? null,
             'content' => $this->message['content'],
             'is_edited' => (bool) $this->message['is_edited'],
             'edited_at' => $this->message['edited_at'],
+            'is_deleted' => (bool) $this->message['is_deleted'],
+            'deleted_at' => $this->message['deleted_at'] ?? null,
             'created_at' => $this->message['created_at'],
             'updated_at' => $this->message['updated_at'],
             'sender' => $this->message['sender'],
