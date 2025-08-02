@@ -27,7 +27,8 @@ class ProfileController extends Controller
         if ($request->hasFile('avatar')) {
 
             if ($user->avatar) {
-                $existingAvatarPath = public_path('storage/' . $user->avatar);
+                $avatarPath = str_replace($request->getSchemeAndHttpHost() . '/storage/', '', $user->avatar);
+                $existingAvatarPath = storage_path('app/public/' . $avatarPath);
                 if (file_exists($existingAvatarPath)) {
                     unlink($existingAvatarPath);
                 }
@@ -36,14 +37,16 @@ class ProfileController extends Controller
             $avatar = $request->file('avatar');
             $uniqueName = time() . Str::uuid() . '.' . $avatar->getClientOriginalExtension();
             $path = $avatar->storeAs('avatars', $uniqueName, 'public');
-            $user->avatar = $path;
+            $baseUrl = $request->getSchemeAndHttpHost();
+            $avatarUrl = $baseUrl . Storage::url($path);
+            $user->avatar = $avatarUrl;
             $user->save();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Profile berhasil diupdate.',
                 'data' => [
-                    'avatar' => Storage::url($path)
+                    'avatar' => $avatarUrl
                 ]
             ]);
         } else {
