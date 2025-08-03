@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ProfileController extends Controller
@@ -18,6 +19,7 @@ class ProfileController extends Controller
 
     public function storeAvatar(Request $request)
     {
+        Log::info('storeAvatar called', $request->all());
         $request->validate([
             'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:5048',
         ]);

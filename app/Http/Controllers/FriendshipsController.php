@@ -31,7 +31,7 @@ class FriendshipsController extends Controller
         $userId = Auth::id();
 
         $friendships = DB::select("
-            SELECT u.id, u.name, u.email, f.status, f.created_at, f.id AS friendship_id, 
+            SELECT u.id, u.name, u.email, u.avatar, f.status, f.created_at, f.id AS friendship_id, 
                 CASE
                     WHEN (f.user_id = ? OR f.friend_id = ?) AND f.status = 'accepted' THEN 'friends'
                     WHEN f.user_id = ? AND f.status = 'pending' THEN 'pending_sent'
@@ -94,7 +94,7 @@ class FriendshipsController extends Controller
         $userId = Auth::id();
 
         $friendRequests = DB::select("
-            SELECT u.id, u.name, u.email, f.status, f.created_at, f.id AS friendship_id
+            SELECT u.id, u.name, u.email,u.avatar , f.status, f.created_at, f.id AS friendship_id
             FROM friendships f
             JOIN users u ON f.user_id = u.id
             WHERE f.friend_id = ? AND f.status = 'pending'
@@ -241,7 +241,7 @@ class FriendshipsController extends Controller
         */
 
         $users = DB::select("
-            SELECT u.id, u.name, u.email,
+            SELECT u.id, u.name, u.email, u.avatar,
                 CASE
                     -- Sudah berteman (accepted)
                     WHEN f1.status = 'accepted' OR f2.status = 'accepted' THEN 'friends'

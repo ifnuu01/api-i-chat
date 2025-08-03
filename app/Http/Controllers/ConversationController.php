@@ -36,6 +36,10 @@ class ConversationController extends Controller
                 WHEN c.user1_id = ? THEN u2.email
                 ELSE u1.email
             END AS other_participant_email,
+            CASE 
+                WHEN c.user1_id = ? THEN u2.avatar
+                ELSE u1.avatar
+            END AS other_participant_avatar,
             -- Last message info
             lm.id AS last_message_id,
             lm.content AS last_message_content,
@@ -68,6 +72,8 @@ class ConversationController extends Controller
             FROM messages m
             JOIN conversations conv ON m.conversation_id = conv.id
             WHERE (conv.user1_id = ? OR conv.user2_id = ?)
+            -- jangan hitung pesan diri sendiri
+            AND m.sender_id != ?
             AND m.created_at > CASE
                 WHEN conv.user1_id = ? THEN COALESCE(conv.user1_last_read_at, '1970-01-01')
                 ELSE COALESCE(conv.user2_last_read_at, '1970-01-01')
@@ -76,7 +82,18 @@ class ConversationController extends Controller
         ) unread ON c.id = unread.conversation_id
         WHERE c.user1_id = ? OR c.user2_id = ?
         ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
-    ", [$userId, $userId, $userId, $userId, $userId, $userId, $userId, $userId]);
+    ", [
+            $userId, // CASE
+            $userId, // CASE
+            $userId, // CASE
+            $userId, // CASE
+            $userId, // unread: user1_id = ?
+            $userId, // unread: user2_id = ?
+            $userId, // unread: m.user_id != ?
+            $userId, // unread: CASE user1_id
+            $userId, // WHERE c.user1_id = ?
+            $userId  // WHERE c.user2_id = ?
+        ]);
 
         $formattedConversations = [];
         foreach ($conversations as $conversation) {
@@ -92,7 +109,8 @@ class ConversationController extends Controller
                 'other_participant' => [
                     'id' => $conversation->other_participant_id,
                     'name' => $conversation->other_participant_name,
-                    'email' => $conversation->other_participant_email
+                    'email' => $conversation->other_participant_email,
+                    'avatar' => $conversation->other_participant_avatar
                 ],
                 'last_message' => $conversation->last_message_id ? [
                     'id' => $conversation->last_message_id,
@@ -164,6 +182,7 @@ class ConversationController extends Controller
             FROM messages m
             JOIN conversations conv ON m.conversation_id = conv.id
             WHERE (conv.user1_id = ? OR conv.user2_id = ?)
+            AND m.sender_id != ?
             AND m.created_at > CASE
                 WHEN conv.user1_id = ? THEN COALESCE(conv.user1_last_read_at, '1970-01-01')
                 ELSE COALESCE(conv.user2_last_read_at, '1970-01-01')
@@ -179,6 +198,7 @@ class ConversationController extends Controller
         )
         ORDER BY COALESCE(c.last_message_at, c.created_at) DESC
     ", [
+            $userId,
             $userId,
             $userId,
             $userId,

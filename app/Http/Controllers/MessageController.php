@@ -40,6 +40,16 @@ class MessageController extends Controller
             ], 404);
         }
 
+        if ($conversation->user1_id == $currentUserId) {
+            DB::table('conversations')
+                ->where('id', $conversationId)
+                ->update(['user1_last_read_at' => now()]);
+        } elseif ($conversation->user2_id == $currentUserId) {
+            DB::table('conversations')
+                ->where('id', $conversationId)
+                ->update(['user2_last_read_at' => now()]);
+        }
+
         $page = max(1, (int) $request->query('page', 1));
         $limit = min(100, max(1, (int) $request->input('limit', 50)));
         $offset = ($page - 1) * $limit;
@@ -144,6 +154,20 @@ class MessageController extends Controller
             $messageArray['reply_to'] = null;
         }
 
+        DB::table('conversations')
+            ->where('id', $conversationId)
+            ->update(['last_message_at' => now()]);
+
+        if ($conversation->user1_id == $currentUserId) {
+            DB::table('conversations')
+                ->where('id', $conversationId)
+                ->update(['user1_last_read_at' => now()]);
+        } elseif ($conversation->user2_id == $currentUserId) {
+            DB::table('conversations')
+                ->where('id', $conversationId)
+                ->update(['user2_last_read_at' => now()]);
+        }
+
         Log::info("🚨 Kirim event MessageSent", ['id' => $messageId]);
         event(new MessageSent($messageArray));
 
@@ -209,6 +233,17 @@ class MessageController extends Controller
             $messageArray['reply_to'] = null;
         }
 
+        $latestMessage = DB::table('messages')
+            ->where('conversation_id', $message->conversation_id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        DB::table('conversations')
+            ->where('id', $message->conversation_id)
+            ->update([
+                'last_message_at' => $latestMessage->created_at,
+            ]);
+
         Log::info("🚨 Kirim event MessageUpdated", ['id' => $messageId]);
         event(new MessageUpdated($messageArray));
 
@@ -241,6 +276,17 @@ class MessageController extends Controller
                 'is_deleted' => true,
                 'deleted_at' => now(),
                 'updated_at' => now(),
+            ]);
+
+        $latestMessage = DB::table('messages')
+            ->where('conversation_id', $message->conversation_id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        DB::table('conversations')
+            ->where('id', $message->conversation_id)
+            ->update([
+                'last_message_at' => $latestMessage ? $latestMessage->created_at : null,
             ]);
 
         Log::info("🚨 Kirim event MessageDeleted", ['id' => $idMessage]);
