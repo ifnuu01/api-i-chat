@@ -42,8 +42,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [UserController::class, 'index']);
         Route::get('/search', [UserController::class, 'search']);
         Route::get('/{id}', [UserController::class, 'show']);
+    });
 
-        // Admin routes
+    // === ADMIN MANAGEMENT ===
+    Route::middleware('role:admin')->prefix('users')->group(function () {
         Route::delete('/{id}', [UserController::class, 'destroy']);
         Route::post('/{id}/block', [UserController::class, 'block']);
         Route::post('/{id}/unblock', [UserController::class, 'unblock']);
